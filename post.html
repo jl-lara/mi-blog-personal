@@ -3,24 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="post-title">Cargando... - Mi Blog Personal</title>
-    <meta name="description" content="Artículo del blog personal">
+    <title id="post-title">Cargando... - Café & Pasión</title>
+    <meta name="description" content="Artículo del blog Café & Pasión">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Lora:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☕</text></svg>">
 </head>
 <body>
     <header class="header">
         <nav class="nav">
             <div class="nav-container">
-                <h1 class="logo">
-                    <a href="index.html">Mi Blog</a>
-                </h1>
+                <div class="logo">
+                    <span class="logo-icon">☕</span>
+                    <h1><a href="index.html">Café & Pasión</a></h1>
+                </div>
                 <ul class="nav-menu">
                     <li><a href="index.html" class="nav-link">Inicio</a></li>
+                    <li><a href="index.html#cafe-mes" class="nav-link">Café del Mes</a></li>
+                    <li><a href="index.html#testimonios" class="nav-link">Testimonios</a></li>
                     <li><a href="admin.html" class="nav-link">Admin</a></li>
                 </ul>
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Menú móvil">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
             </div>
         </nav>
     </header>
@@ -28,29 +37,105 @@
     <main class="main">
         <div class="container">
             <div id="loading" class="loading" aria-live="polite">
-                <div class="spinner"></div>
-                <p>Cargando artículo...</p>
+                <div class="coffee-loader">
+                    <div class="coffee-cup">
+                        <div class="coffee-liquid"></div>
+                    </div>
+                </div>
+                <p>Preparando tu lectura...</p>
             </div>
 
             <div id="error-message" class="error-message" role="alert" style="display: none;">
-                <h2>Error al cargar el artículo</h2>
+                <div class="error-icon">☕</div>
+                <h2>¡Ups! No pudimos encontrar esta historia</h2>
                 <p id="error-details"></p>
                 <div class="error-actions">
-                    <button onclick="loadPost()" class="retry-btn">Reintentar</button>
+                    <button onclick="loadPost()" class="retry-btn">Intentar de nuevo</button>
                     <a href="index.html" class="back-btn">Volver al inicio</a>
                 </div>
             </div>
 
             <article id="post-content" class="post-article" style="display: none;">
-                <header class="post-header">
-                    <h1 id="article-title" class="post-title"></h1>
-                    <div class="post-meta">
-                        <time id="article-date" class="post-date"></time>
+                <div class="post-hero">
+                    <div class="post-hero-image">
+                        <img id="post-featured-image" src="/placeholder.svg" alt="" loading="lazy">
+                        <div class="post-hero-overlay"></div>
                     </div>
-                </header>
-                <div id="article-content" class="post-content"></div>
+                    <div class="post-hero-content">
+                        <div class="post-breadcrumb">
+                            <a href="index.html">Inicio</a>
+                            <span>→</span>
+                            <span>Historia del café</span>
+                        </div>
+                        <h1 id="article-title" class="post-title"></h1>
+                        <div class="post-meta">
+                            <div class="post-date-container">
+                                <span class="date-icon">📅</span>
+                                <time id="article-date" class="post-date"></time>
+                            </div>
+                            <div class="reading-time">
+                                <span class="time-icon">⏱️</span>
+                                <span id="reading-time">5 min de lectura</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="post-body">
+                    <div class="post-content-wrapper">
+                        <div id="article-content" class="post-content"></div>
+                        
+                        <div class="post-tags">
+                            <span class="tags-label">Etiquetas:</span>
+                            <div class="tags-container" id="post-tags">
+                                <span class="tag">Café artesanal</span>
+                                <span class="tag">Barismo</span>
+                            </div>
+                        </div>
+                        
+                        <div class="post-share">
+                            <h4>Comparte esta historia</h4>
+                            <div class="share-buttons">
+                                <button onclick="sharePost('twitter')" class="share-btn twitter">🐦 Twitter</button>
+                                <button onclick="sharePost('facebook')" class="share-btn facebook">📘 Facebook</button>
+                                <button onclick="sharePost('whatsapp')" class="share-btn whatsapp">💬 WhatsApp</button>
+                                <button onclick="copyLink()" class="share-btn copy">🔗 Copiar enlace</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <aside class="post-sidebar">
+                        <div class="sidebar-card">
+                            <h4>Sobre el autor</h4>
+                            <div class="author-info">
+                                <div class="author-avatar">
+                                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face" alt="Autor" loading="lazy">
+                                </div>
+                                <div class="author-details">
+                                    <h5>María Café</h5>
+                                    <p>Barista profesional y sommelier de café con más de 10 años explorando el mundo del café artesanal.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="sidebar-card">
+                            <h4>Café recomendado</h4>
+                            <div class="recommended-coffee">
+                                <img src="https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=200&h=150&fit=crop" alt="Café recomendado" loading="lazy">
+                                <h5>Etíope Yirgacheffe</h5>
+                                <p>Perfecto para acompañar esta lectura</p>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+
                 <footer class="post-footer">
-                    <a href="index.html" class="back-link">← Volver a todas las entradas</a>
+                    <div class="post-navigation">
+                        <a href="index.html" class="nav-link back-to-blog">
+                            <span class="nav-icon">←</span>
+                            <span class="nav-text">Volver a todas las historias</span>
+                        </a>
+                    </div>
                 </footer>
             </article>
         </div>
@@ -58,7 +143,35 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024 Mi Blog Personal. Todos los derechos reservados.</p>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <span class="logo-icon">☕</span>
+                        <h3>Café & Pasión</h3>
+                    </div>
+                    <p>Explorando el fascinante mundo del café artesanal, una taza a la vez.</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Contacto</h4>
+                    <p>📧 hola@cafeypasion.com</p>
+                    <p>📱 +34 123 456 789</p>
+                    <p>📍 Madrid, España</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Síguenos</h4>
+                    <div class="social-links">
+                        <a href="#" aria-label="Instagram">📷</a>
+                        <a href="#" aria-label="Twitter">🐦</a>
+                        <a href="#" aria-label="YouTube">📺</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 Café & Pasión. Hecho con ❤️ y mucho café.</p>
+            </div>
         </div>
     </footer>
 

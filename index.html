@@ -3,50 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Blog Personal</title>
-    <meta name="description" content="Blog personal con artículos sobre tecnología y desarrollo">
+    <title>Café & Pasión - Bitácora del Buen Café</title>
+    <meta name="description" content="Explora el aroma de cada historia en nuestro blog dedicado al café artesanal">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Lora:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☕</text></svg>">
 </head>
 <body>
     <header class="header">
         <nav class="nav">
             <div class="nav-container">
-                <h1 class="logo">
-                    <a href="index.html">Mi Blog</a>
-                </h1>
+                <div class="logo">
+                    <span class="logo-icon">☕</span>
+                    <h1><a href="index.html">Café & Pasión</a></h1>
+                </div>
                 <ul class="nav-menu">
                     <li><a href="index.html" class="nav-link active">Inicio</a></li>
+                    <li><a href="#cafe-mes" class="nav-link">Café del Mes</a></li>
+                    <li><a href="#testimonios" class="nav-link">Testimonios</a></li>
                     <li><a href="admin.html" class="nav-link">Admin</a></li>
                 </ul>
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Menú móvil">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
             </div>
         </nav>
     </header>
 
     <main class="main">
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-background">
+                <div class="hero-overlay"></div>
+                <div class="steam-animation">
+                    <div class="steam steam-1"></div>
+                    <div class="steam steam-2"></div>
+                    <div class="steam steam-3"></div>
+                </div>
+            </div>
+            <div class="hero-content">
+                <h2 class="hero-title">Bitácora del Buen Café</h2>
+                <p class="hero-subtitle">Explora el aroma de cada historia</p>
+                <div class="hero-description">
+                    <p>Descubre el fascinante mundo del café artesanal, desde el grano hasta la taza perfecta</p>
+                </div>
+                <a href="#posts-section" class="hero-cta">Explorar Historias</a>
+            </div>
+            <div class="scroll-indicator">
+                <div class="scroll-arrow"></div>
+            </div>
+        </section>
+
         <div class="container">
-            <section class="hero">
-                <h2 class="hero-title">Bienvenido a mi blog</h2>
-                <p class="hero-description">Comparto mis experiencias y conocimientos sobre desarrollo web y tecnología</p>
+            <!-- Posts Section -->
+            <section id="posts-section" class="posts-section">
+                <div class="section-header">
+                    <h3 class="section-title">Últimas Historias del Café</h3>
+                    <p class="section-subtitle">Cada taza cuenta una historia única</p>
+                </div>
+                
+                <div id="loading" class="loading" aria-live="polite">
+                    <div class="coffee-loader">
+                        <div class="coffee-cup">
+                            <div class="coffee-liquid"></div>
+                        </div>
+                    </div>
+                    <p>Preparando el café perfecto...</p>
+                </div>
+                
+                <div id="error-message" class="error-message" role="alert" style="display: none;">
+                    <div class="error-icon">☕</div>
+                    <h4>¡Ups! Algo salió mal</h4>
+                    <p id="error-details"></p>
+                    <button onclick="loadPosts()" class="retry-btn">Intentar de nuevo</button>
+                </div>
+                
+                <div id="posts-container" class="posts-grid" style="display: none;"></div>
+                
+                <div id="no-posts" class="no-posts" style="display: none;">
+                    <div class="empty-state">
+                        <span class="empty-icon">☕</span>
+                        <h4>Aún no hay historias</h4>
+                        <p>Pronto compartiremos increíbles aventuras cafeteras</p>
+                    </div>
+                </div>
             </section>
 
-            <section class="posts-section">
-                <h3 class="section-title">Últimas entradas</h3>
-                <div id="loading" class="loading" aria-live="polite">
-                    <div class="spinner"></div>
-                    <p>Cargando entradas...</p>
+            <!-- Café del Mes Section -->
+            <section id="cafe-mes" class="cafe-mes-section">
+                <div class="section-header">
+                    <h3 class="section-title">Café del Mes</h3>
+                    <p class="section-subtitle">Nuestra selección especial</p>
                 </div>
-                <div id="error-message" class="error-message" role="alert" style="display: none;">
-                    <h4>Error al cargar las entradas</h4>
-                    <p id="error-details"></p>
-                    <button onclick="loadPosts()" class="retry-btn">Reintentar</button>
+                <div class="cafe-mes-card">
+                    <div class="cafe-mes-image">
+                        <img src="https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400&h=300&fit=crop&crop=center" alt="Café Etíope Yirgacheffe" loading="lazy">
+                        <div class="cafe-badge">Destacado</div>
+                    </div>
+                    <div class="cafe-mes-content">
+                        <h4>Etíope Yirgacheffe</h4>
+                        <p class="cafe-origin">Región de Sidama, Etiopía</p>
+                        <p class="cafe-description">
+                            Un café excepcional con notas florales y cítricas, cultivado a 2000 metros de altura. 
+                            Su perfil único combina acidez brillante con un cuerpo medio y un final limpio y refrescante.
+                        </p>
+                        <div class="cafe-notes">
+                            <span class="note">Floral</span>
+                            <span class="note">Cítrico</span>
+                            <span class="note">Té negro</span>
+                        </div>
+                    </div>
                 </div>
-                <div id="posts-container" class="posts-grid" style="display: none;"></div>
-                <div id="no-posts" class="no-posts" style="display: none;">
-                    <h4>No hay entradas disponibles</h4>
-                    <p>Aún no se han publicado artículos en este blog.</p>
+            </section>
+
+            <!-- Testimonios Section -->
+            <section id="testimonios" class="testimonios-section">
+                <div class="section-header">
+                    <h3 class="section-title">Lo que dicen nuestros lectores</h3>
+                    <p class="section-subtitle">Compartiendo la pasión por el café</p>
+                </div>
+                <div class="testimonios-grid">
+                    <div class="testimonio-card">
+                        <div class="testimonio-content">
+                            <p>"Este blog me ha abierto los ojos al verdadero mundo del café. Cada artículo es una aventura sensorial."</p>
+                        </div>
+                        <div class="testimonio-author">
+                            <div class="author-avatar">
+                                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&crop=face" alt="María González" loading="lazy">
+                            </div>
+                            <div class="author-info">
+                                <h5>María González</h5>
+                                <span>Barista profesional</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="testimonio-card">
+                        <div class="testimonio-content">
+                            <p>"Gracias a sus recomendaciones, he descubierto cafés increíbles que jamás habría probado."</p>
+                        </div>
+                        <div class="testimonio-author">
+                            <div class="author-avatar">
+                                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=60&h=60&fit=crop&crop=face" alt="Carlos Ruiz" loading="lazy">
+                            </div>
+                            <div class="author-info">
+                                <h5>Carlos Ruiz</h5>
+                                <span>Amante del café</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="testimonio-card">
+                        <div class="testimonio-content">
+                            <p>"La pasión que transmiten en cada post es contagiosa. Mi ritual matutino nunca fue igual."</p>
+                        </div>
+                        <div class="testimonio-author">
+                            <div class="author-avatar">
+                                <img src="https://images.unsplash.com/photo-1494790108755-2616b332c1c2?w=60&h=60&fit=crop&crop=face" alt="Ana Martín" loading="lazy">
+                            </div>
+                            <div class="author-info">
+                                <h5>Ana Martín</h5>
+                                <span>Sommelier de café</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
         </div>
@@ -54,7 +178,35 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024 Mi Blog Personal. Todos los derechos reservados.</p>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <span class="logo-icon">☕</span>
+                        <h3>Café & Pasión</h3>
+                    </div>
+                    <p>Explorando el fascinante mundo del café artesanal, una taza a la vez.</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Contacto</h4>
+                    <p>📧 hola@cafeypasion.com</p>
+                    <p>📱 +34 123 456 789</p>
+                    <p>📍 Madrid, España</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Síguenos</h4>
+                    <div class="social-links">
+                        <a href="#" aria-label="Instagram">📷</a>
+                        <a href="#" aria-label="Twitter">🐦</a>
+                        <a href="#" aria-label="YouTube">📺</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 Café & Pasión. Hecho con ❤️ y mucho café.</p>
+            </div>
         </div>
     </footer>
 

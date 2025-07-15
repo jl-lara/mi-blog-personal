@@ -1,4 +1,4 @@
-// Configuración global
+// ===== CONFIGURACIÓN GLOBAL =====
 const CONFIG = {
   POSTS_FILE: "data/posts.json",
   MAX_EXCERPT_LENGTH: 150,
@@ -7,18 +7,20 @@ const CONFIG = {
     month: "long",
     day: "numeric",
   },
+  READING_SPEED: 200, // palabras por minuto
 }
 
-// Estado global de la aplicación
+// ===== ESTADO GLOBAL DE LA APLICACIÓN =====
 const appState = {
   posts: [],
   currentPost: null,
   isLoading: false,
   error: null,
   editingPostId: null,
+  mobileMenuOpen: false,
 }
 
-// Utilidades
+// ===== UTILIDADES =====
 const utils = {
   // Formatear fecha
   formatDate: (dateString) => {
@@ -42,6 +44,16 @@ const utils = {
     if (cleanContent.length <= maxLength) return cleanContent
 
     return cleanContent.substring(0, maxLength).trim() + "..."
+  },
+
+  // Calcular tiempo de lectura
+  calculateReadingTime: (content) => {
+    if (!content || typeof content !== "string") return "5 min"
+
+    const wordCount = content.trim().split(/\s+/).length
+    const readingTime = Math.ceil(wordCount / CONFIG.READING_SPEED)
+
+    return `${readingTime} min de lectura`
   },
 
   // Obtener parámetro de URL
@@ -72,12 +84,21 @@ const utils = {
     } else {
       const date = new Date(post.date)
       if (isNaN(date.getTime())) {
-        errors.push("Fecha debe tener formato válido")
+        errors.push("Fecha debe tener formato válido (YYYY-MM-DD)")
       }
     }
 
     if (!post.content || typeof post.content !== "string" || post.content.trim().length === 0) {
       errors.push("Contenido es requerido y no puede estar vacío")
+    }
+
+    // Validaciones opcionales
+    if (post.image && typeof post.image !== "string") {
+      errors.push("Imagen debe ser una URL válida")
+    }
+
+    if (post.excerpt && typeof post.excerpt !== "string") {
+      errors.push("Excerpt debe ser string")
     }
 
     return errors
@@ -110,59 +131,135 @@ const utils = {
     }
   },
 
+  // Procesar contenido Markdown básico
+  processMarkdown: (content) => {
+    if (!content || typeof content !== "string") return ""
+
+    return (
+      content
+        // Párrafos
+        .split("\n\n")
+        .map((paragraph) => paragraph.trim())
+        .filter((paragraph) => paragraph.length > 0)
+        .map((paragraph) => {
+          // Títulos
+          if (paragraph.startsWith("## ")) {
+            return `<h2>${paragraph.substring(3)}</h2>`
+          }
+          if (paragraph.startsWith("### ")) {
+            return `<h3>${paragraph.substring(4)}</h3>`
+          }
+          if (paragraph.startsWith("#### ")) {
+            return `<h4>${paragraph.substring(5)}</h4>`
+          }
+
+          // Listas
+          if (paragraph.includes("\n• ") || paragraph.includes("\n- ")) {
+            const items = paragraph
+              .split(/\n[•-] /)
+              .filter((item) => item.trim())
+              .map((item) => `<li>${utils.escapeHtml(item.trim())}</li>`)
+              .join("")
+            return `<ul>${items}</ul>`
+          }
+
+          // Párrafo normal con formato
+          const processedParagraph = paragraph
+            // Negrita
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+            // Cursiva
+            .replace(/\*(.*?)\*/g, "<em>$1</em>")
+            // Código inline
+            .replace(/`(.*?)`/g, "<code>$1</code>")
+            // Saltos de línea
+            .replace(/\n/g, "<br>")
+
+          return `<p>${utils.escapeHtml(processedParagraph)}</p>`
+        })
+        .join("")
+    )
+  },
+
+  // Escapar HTML
+  escapeHtml: (text) => {
+    if (typeof text !== "string") return ""
+
+    const div = document.createElement("div")
+    div.textContent = text
+    return div.innerHTML
+  },
+
   // Mostrar notificación
   showNotification: (message, type = "info") => {
     // Crear elemento de notificación
     const notification = document.createElement("div")
     notification.className = `notification notification-${type}`
+
+    const icon =
+      {
+        info: "ℹ️",
+        success: "✅",
+        error: "❌",
+        warning: "⚠️",
+      }[type] || "ℹ️"
+
     notification.innerHTML = `
-            <span>${message}</span>
-            <button onclick="this.parentElement.remove()" aria-label="Cerrar notificación">&times;</button>
-        `
+      <span class="notification-icon">${icon}</span>
+      <span class="notification-message">${message}</span>
+      <button onclick="this.parentElement.remove()" aria-label="Cerrar notificación" class="notification-close">×</button>
+    `
 
     // Añadir estilos si no existen
     if (!document.getElementById("notification-styles")) {
       const styles = document.createElement("style")
       styles.id = "notification-styles"
       styles.textContent = `
-                .notification {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    padding: 1rem 1.5rem;
-                    border-radius: 0.5rem;
-                    color: white;
-                    font-weight: 500;
-                    z-index: 1000;
-                    display: flex;
-                    align-items: center;
-                    gap: 1rem;
-                    max-width: 400px;
-                    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-                    animation: slideIn 0.3s ease;
-                }
-                .notification-info { background-color: #0891b2; }
-                .notification-success { background-color: #059669; }
-                .notification-error { background-color: #dc2626; }
-                .notification-warning { background-color: #d97706; }
-                .notification button {
-                    background: none;
-                    border: none;
-                    color: white;
-                    font-size: 1.25rem;
-                    cursor: pointer;
-                    padding: 0;
-                    width: 20px;
-                    height: 20px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-                @keyframes slideIn {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
-                }
-            `
+        .notification {
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          padding: 1rem 1.5rem;
+          border-radius: 12px;
+          color: white;
+          font-weight: 500;
+          z-index: 10000;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          max-width: 400px;
+          box-shadow: 0 8px 24px rgba(45, 27, 20, 0.2);
+          animation: slideInRight 0.3s ease;
+          font-family: var(--font-secondary);
+        }
+        .notification-info { background: linear-gradient(135deg, #2196f3, #1976d2); }
+        .notification-success { background: linear-gradient(135deg, #4caf50, #388e3c); }
+        .notification-error { background: linear-gradient(135deg, #f44336, #d32f2f); }
+        .notification-warning { background: linear-gradient(135deg, #ff9800, #f57c00); }
+        .notification-icon { font-size: 1.25rem; }
+        .notification-message { flex: 1; }
+        .notification-close {
+          background: none;
+          border: none;
+          color: white;
+          font-size: 1.5rem;
+          cursor: pointer;
+          padding: 0;
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          transition: background-color 0.2s ease;
+        }
+        .notification-close:hover {
+          background-color: rgba(255, 255, 255, 0.2);
+        }
+        @keyframes slideInRight {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+      `
       document.head.appendChild(styles)
     }
 
@@ -171,13 +268,14 @@ const utils = {
     // Auto-remover después de 5 segundos
     setTimeout(() => {
       if (notification.parentElement) {
-        notification.remove()
+        notification.style.animation = "slideInRight 0.3s ease reverse"
+        setTimeout(() => notification.remove(), 300)
       }
     }, 5000)
   },
 }
 
-// API para manejar posts
+// ===== API PARA MANEJAR POSTS =====
 const postsAPI = {
   // Cargar posts desde JSON
   load: async () => {
@@ -235,7 +333,7 @@ const postsAPI = {
     return appState.posts.find((post) => post.id === id) || null
   },
 
-  // Simular guardado (en una aplicación real, esto sería una llamada al servidor)
+  // Simular guardado
   save: async (posts) => {
     try {
       // Validar datos antes de "guardar"
@@ -245,7 +343,7 @@ const postsAPI = {
       }
 
       // Simular delay de red
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      await new Promise((resolve) => setTimeout(resolve, 800))
 
       // En una aplicación real, aquí harías la llamada al servidor
       console.log("Posts guardados:", posts)
@@ -261,13 +359,53 @@ const postsAPI = {
   },
 }
 
-// Funciones para la página principal (index.html)
+// ===== FUNCIONES DE NAVEGACIÓN =====
+function toggleMobileMenu() {
+  const navMenu = document.querySelector(".nav-menu")
+  const mobileBtn = document.querySelector(".mobile-menu-btn")
+
+  appState.mobileMenuOpen = !appState.mobileMenuOpen
+
+  if (appState.mobileMenuOpen) {
+    navMenu.classList.add("active")
+    mobileBtn.classList.add("active")
+  } else {
+    navMenu.classList.remove("active")
+    mobileBtn.classList.remove("active")
+  }
+}
+
+// Cerrar menú móvil al hacer clic en un enlace
+document.addEventListener("click", (e) => {
+  if (e.target.matches(".nav-link") && appState.mobileMenuOpen) {
+    toggleMobileMenu()
+  }
+})
+
+// ===== FUNCIONES PARA LA PÁGINA PRINCIPAL =====
 const homePage = {
   init: () => {
     if (document.getElementById("posts-container")) {
       loadPosts()
+      setupSmoothScrolling()
     }
   },
+}
+
+function setupSmoothScrolling() {
+  // Smooth scroll para enlaces internos
+  document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+    anchor.addEventListener("click", function (e) {
+      e.preventDefault()
+      const target = document.querySelector(this.getAttribute("href"))
+      if (target) {
+        target.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        })
+      }
+    })
+  })
 }
 
 // Cargar y mostrar posts en la página principal
@@ -295,22 +433,40 @@ async function loadPosts() {
 
     if (postsContainer) {
       postsContainer.innerHTML = posts
-        .map(
-          (post) => `
-                <article class="post-card">
-                    <h3 class="post-card-title">
-                        <a href="post.html?id=${encodeURIComponent(post.id)}">${escapeHtml(post.title)}</a>
-                    </h3>
-                    <time class="post-card-date" datetime="${post.date}">
-                        ${utils.formatDate(post.date)}
-                    </time>
-                    <p class="post-card-excerpt">${escapeHtml(utils.createExcerpt(post.content))}</p>
-                    <a href="post.html?id=${encodeURIComponent(post.id)}" class="read-more">
-                        Leer más →
-                    </a>
-                </article>
-            `,
-        )
+        .map((post, index) => {
+          const defaultImage =
+            "https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=400&h=250&fit=crop&crop=center"
+          const postImage = post.image || defaultImage
+          const excerpt = post.excerpt || utils.createExcerpt(post.content)
+
+          return `
+            <article class="post-card" style="animation-delay: ${index * 0.1}s">
+              <div class="post-card-image">
+                <img src="${postImage}" alt="${utils.escapeHtml(post.title)}" loading="lazy" onerror="this.src='${defaultImage}'">
+                <div class="post-card-overlay"></div>
+              </div>
+              <div class="post-card-content">
+                <h3 class="post-card-title">
+                  <a href="post.html?id=${encodeURIComponent(post.id)}">${utils.escapeHtml(post.title)}</a>
+                </h3>
+                <div class="post-card-meta">
+                  <div class="post-card-date">
+                    <span>📅</span>
+                    <time datetime="${post.date}">${utils.formatDate(post.date)}</time>
+                  </div>
+                  <div class="reading-time">
+                    <span>⏱️</span>
+                    <span>${utils.calculateReadingTime(post.content)}</span>
+                  </div>
+                </div>
+                <p class="post-card-excerpt">${utils.escapeHtml(excerpt)}</p>
+                <a href="post.html?id=${encodeURIComponent(post.id)}" class="read-more">
+                  Leer historia completa →
+                </a>
+              </div>
+            </article>
+          `
+        })
         .join("")
 
       postsContainer.style.display = "grid"
@@ -328,7 +484,7 @@ async function loadPosts() {
   }
 }
 
-// Funciones para la página de post individual (post.html)
+// ===== FUNCIONES PARA LA PÁGINA DE POST INDIVIDUAL =====
 const postPage = {
   init: () => {
     if (document.getElementById("post-content")) {
@@ -361,34 +517,44 @@ async function loadPost() {
     if (loadingEl) loadingEl.style.display = "none"
 
     if (!post) {
-      showPostError(`No se encontró el post con ID: ${postId}`)
+      showPostError(`No se encontró la historia con ID: ${postId}`)
       return
     }
 
     // Actualizar título de la página
-    document.title = `${post.title} - Mi Blog Personal`
+    document.title = `${post.title} - Café & Pasión`
 
     // Mostrar contenido del post
     if (postContent) {
       const titleEl = document.getElementById("article-title")
       const dateEl = document.getElementById("article-date")
       const contentEl = document.getElementById("article-content")
+      const featuredImageEl = document.getElementById("post-featured-image")
+      const readingTimeEl = document.getElementById("reading-time")
 
       if (titleEl) titleEl.textContent = post.title
+
       if (dateEl) {
         dateEl.textContent = utils.formatDate(post.date)
         dateEl.setAttribute("datetime", post.date)
       }
-      if (contentEl) {
-        // Convertir saltos de línea a párrafos HTML
-        const formattedContent = post.content
-          .split("\n\n")
-          .map((paragraph) => paragraph.trim())
-          .filter((paragraph) => paragraph.length > 0)
-          .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`)
-          .join("")
 
-        contentEl.innerHTML = formattedContent
+      if (readingTimeEl) {
+        readingTimeEl.textContent = utils.calculateReadingTime(post.content)
+      }
+
+      if (featuredImageEl) {
+        const defaultImage =
+          "https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1200&h=600&fit=crop&crop=center"
+        featuredImageEl.src = post.image || defaultImage
+        featuredImageEl.alt = post.title
+        featuredImageEl.onerror = function () {
+          this.src = defaultImage
+        }
+      }
+
+      if (contentEl) {
+        contentEl.innerHTML = utils.processMarkdown(post.content)
       }
 
       postContent.style.display = "block"
@@ -397,7 +563,7 @@ async function loadPost() {
     appState.currentPost = post
   } catch (error) {
     if (loadingEl) loadingEl.style.display = "none"
-    showPostError(`Error cargando el post: ${error.message}`)
+    showPostError(`Error cargando la historia: ${error.message}`)
   }
 }
 
@@ -412,7 +578,37 @@ function showPostError(message) {
   }
 }
 
-// Funciones para el panel de administración (admin.html)
+// Funciones para compartir post
+function sharePost(platform) {
+  if (!appState.currentPost) return
+
+  const url = window.location.href
+  const title = appState.currentPost.title
+  const text = `¡Echa un vistazo a esta historia sobre café: "${title}"`
+
+  const shareUrls = {
+    twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+    whatsapp: `https://wa.me/?text=${encodeURIComponent(text + " " + url)}`,
+  }
+
+  if (shareUrls[platform]) {
+    window.open(shareUrls[platform], "_blank", "width=600,height=400")
+  }
+}
+
+function copyLink() {
+  navigator.clipboard
+    .writeText(window.location.href)
+    .then(() => {
+      utils.showNotification("Enlace copiado al portapapeles", "success")
+    })
+    .catch(() => {
+      utils.showNotification("No se pudo copiar el enlace", "error")
+    })
+}
+
+// ===== FUNCIONES PARA EL PANEL DE ADMINISTRACIÓN =====
 const adminPage = {
   init: () => {
     if (document.getElementById("posts-admin-container")) {
@@ -448,7 +644,14 @@ async function handlePostSubmit(event) {
     id: document.getElementById("post-id").value || utils.generateId(),
     title: formData.get("title") || document.getElementById("post-title-input").value,
     date: formData.get("date") || document.getElementById("post-date-input").value,
+    image: document.getElementById("post-image-input").value || "",
+    excerpt: document.getElementById("post-excerpt-input").value || "",
     content: formData.get("content") || document.getElementById("post-content-input").value,
+  }
+
+  // Si no hay excerpt, generar uno automáticamente
+  if (!postData.excerpt) {
+    postData.excerpt = utils.createExcerpt(postData.content)
   }
 
   // Validar datos
@@ -466,12 +669,12 @@ async function handlePostSubmit(event) {
       const index = updatedPosts.findIndex((p) => p.id === appState.editingPostId)
       if (index !== -1) {
         updatedPosts[index] = postData
-        utils.showNotification("Post actualizado correctamente", "success")
+        utils.showNotification("Historia actualizada correctamente", "success")
       }
     } else {
       // Añadir nuevo post
       updatedPosts.push(postData)
-      utils.showNotification("Post creado correctamente", "success")
+      utils.showNotification("Nueva historia creada correctamente", "success")
     }
 
     await postsAPI.save(updatedPosts)
@@ -484,7 +687,7 @@ async function handlePostSubmit(event) {
     // Cambiar a la pestaña de lista
     showTab("posts-list")
   } catch (error) {
-    utils.showNotification(`Error guardando post: ${error.message}`, "error")
+    utils.showNotification(`Error guardando historia: ${error.message}`, "error")
   }
 }
 
@@ -506,34 +709,45 @@ async function loadPostsAdmin() {
     if (postsContainer) {
       if (posts.length === 0) {
         postsContainer.innerHTML = `
-                    <div class="no-posts">
-                        <h4>No hay posts disponibles</h4>
-                        <p>Crea tu primer post usando el formulario.</p>
-                    </div>
-                `
+          <div class="no-posts">
+            <div class="empty-state">
+              <span class="empty-icon">☕</span>
+              <h4>No hay historias disponibles</h4>
+              <p>Crea tu primera historia sobre café usando el formulario.</p>
+            </div>
+          </div>
+        `
       } else {
         postsContainer.innerHTML = posts
-          .map(
-            (post) => `
-                    <div class="admin-post-item">
-                        <div class="admin-post-header">
-                            <div>
-                                <h4 class="admin-post-title">${escapeHtml(post.title)}</h4>
-                                <time class="admin-post-date" datetime="${post.date}">
-                                    ${utils.formatDate(post.date)}
-                                </time>
-                            </div>
-                            <div class="admin-post-actions">
-                                <button onclick="editPost('${post.id}')" class="btn btn-info">Editar</button>
-                                <button onclick="deletePost('${post.id}')" class="btn btn-danger">Eliminar</button>
-                            </div>
-                        </div>
-                        <div class="admin-post-content">
-                            ${escapeHtml(utils.createExcerpt(post.content, 200))}
-                        </div>
+          .map((post) => {
+            const excerpt = post.excerpt || utils.createExcerpt(post.content, 200)
+            return `
+              <div class="admin-post-item">
+                <div class="admin-post-header">
+                  <div>
+                    <h4 class="admin-post-title">${utils.escapeHtml(post.title)}</h4>
+                    <div class="admin-post-date">
+                      <span>📅</span>
+                      <time datetime="${post.date}">${utils.formatDate(post.date)}</time>
                     </div>
-                `,
-          )
+                  </div>
+                  <div class="admin-post-actions">
+                    <button onclick="editPost('${post.id}')" class="btn btn-info">
+                      <span class="btn-icon">✏️</span>
+                      Editar
+                    </button>
+                    <button onclick="deletePost('${post.id}')" class="btn btn-danger">
+                      <span class="btn-icon">🗑️</span>
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+                <div class="admin-post-content">
+                  ${utils.escapeHtml(excerpt)}
+                </div>
+              </div>
+            `
+          })
           .join("")
       }
 
@@ -556,7 +770,7 @@ async function loadPostsAdmin() {
 function editPost(postId) {
   const post = postsAPI.getById(postId)
   if (!post) {
-    utils.showNotification("Post no encontrado", "error")
+    utils.showNotification("Historia no encontrada", "error")
     return
   }
 
@@ -564,24 +778,26 @@ function editPost(postId) {
   document.getElementById("post-id").value = post.id
   document.getElementById("post-title-input").value = post.title
   document.getElementById("post-date-input").value = post.date
+  document.getElementById("post-image-input").value = post.image || ""
+  document.getElementById("post-excerpt-input").value = post.excerpt || ""
   document.getElementById("post-content-input").value = post.content
 
   // Cambiar UI a modo edición
-  document.getElementById("form-title").textContent = "Editar Post"
-  document.getElementById("cancel-edit").style.display = "inline-block"
+  document.getElementById("form-title").textContent = "Editar Historia del Café"
+  document.getElementById("cancel-edit").style.display = "inline-flex"
 
   appState.editingPostId = postId
 
   // Cambiar a la pestaña del formulario
   showTab("add-post")
 
-  utils.showNotification("Post cargado para edición", "info")
+  utils.showNotification("Historia cargada para edición", "info")
 }
 
 // Cancelar edición
 function cancelEdit() {
   document.getElementById("post-id").value = ""
-  document.getElementById("form-title").textContent = "Añadir Nuevo Post"
+  document.getElementById("form-title").textContent = "Nueva Historia del Café"
   document.getElementById("cancel-edit").style.display = "none"
   document.getElementById("post-form").reset()
 
@@ -598,11 +814,11 @@ function cancelEdit() {
 async function deletePost(postId) {
   const post = postsAPI.getById(postId)
   if (!post) {
-    utils.showNotification("Post no encontrado", "error")
+    utils.showNotification("Historia no encontrada", "error")
     return
   }
 
-  if (!confirm(`¿Estás seguro de que quieres eliminar "${post.title}"?`)) {
+  if (!confirm(`¿Estás seguro de que quieres eliminar "${post.title}"?\n\nEsta acción no se puede deshacer.`)) {
     return
   }
 
@@ -610,7 +826,7 @@ async function deletePost(postId) {
     const updatedPosts = appState.posts.filter((p) => p.id !== postId)
     await postsAPI.save(updatedPosts)
 
-    utils.showNotification("Post eliminado correctamente", "success")
+    utils.showNotification("Historia eliminada correctamente", "success")
     loadPostsAdmin()
 
     // Si estábamos editando este post, cancelar edición
@@ -618,11 +834,11 @@ async function deletePost(postId) {
       cancelEdit()
     }
   } catch (error) {
-    utils.showNotification(`Error eliminando post: ${error.message}`, "error")
+    utils.showNotification(`Error eliminando historia: ${error.message}`, "error")
   }
 }
 
-// Funciones para el editor JSON
+// ===== FUNCIONES PARA EL EDITOR JSON =====
 function loadJsonEditor() {
   const textarea = document.getElementById("json-textarea")
   if (textarea) {
@@ -641,10 +857,10 @@ function validateJson() {
 
   if (validation.valid) {
     validationEl.className = "validation-message success"
-    validationEl.textContent = "✓ JSON válido - Estructura correcta"
+    validationEl.textContent = "✅ JSON válido - Estructura correcta para el blog de café"
   } else {
     validationEl.className = "validation-message error"
-    validationEl.textContent = `✗ ${validation.error}`
+    validationEl.textContent = `❌ ${validation.error}`
   }
 }
 
@@ -688,13 +904,13 @@ async function saveJson() {
 }
 
 function resetJson() {
-  if (confirm("¿Estás seguro de que quieres resetear el JSON? Se perderán los cambios no guardados.")) {
+  if (confirm("¿Estás seguro de que quieres resetear el JSON?\n\nSe perderán los cambios no guardados.")) {
     loadJsonEditor()
     utils.showNotification("JSON reseteado", "info")
   }
 }
 
-// Funciones para las pestañas del admin
+// ===== FUNCIONES PARA LAS PESTAÑAS DEL ADMIN =====
 function showTab(tabName) {
   // Ocultar todas las pestañas
   document.querySelectorAll(".tab-content").forEach((tab) => {
@@ -724,16 +940,7 @@ function showTab(tabName) {
   }
 }
 
-// Función para escapar HTML
-function escapeHtml(text) {
-  if (typeof text !== "string") return ""
-
-  const div = document.createElement("div")
-  div.textContent = text
-  return div.innerHTML
-}
-
-// Inicialización cuando el DOM esté listo
+// ===== INICIALIZACIÓN CUANDO EL DOM ESTÉ LISTO =====
 document.addEventListener("DOMContentLoaded", () => {
   try {
     // Determinar qué página estamos cargando y ejecutar la inicialización apropiada
@@ -754,13 +961,19 @@ document.addEventListener("DOMContentLoaded", () => {
       default:
         console.warn("Página no reconocida:", filename)
     }
+
+    // Configurar navegación móvil
+    const mobileMenuBtn = document.querySelector(".mobile-menu-btn")
+    if (mobileMenuBtn) {
+      mobileMenuBtn.addEventListener("click", toggleMobileMenu)
+    }
   } catch (error) {
     console.error("Error durante la inicialización:", error)
     utils.showNotification("Error inicializando la aplicación", "error")
   }
 })
 
-// Manejo de errores globales
+// ===== MANEJO DE ERRORES GLOBALES =====
 window.addEventListener("error", (event) => {
   console.error("Error global:", event.error)
   utils.showNotification("Se produjo un error inesperado", "error")
@@ -771,4 +984,67 @@ window.addEventListener("unhandledrejection", (event) => {
   console.error("Promise rechazada no manejada:", event.reason)
   utils.showNotification("Error de conexión o carga de datos", "error")
   event.preventDefault()
+})
+
+// ===== FUNCIONES DE UTILIDAD ADICIONALES =====
+
+// Lazy loading para imágenes
+function setupLazyLoading() {
+  if ("IntersectionObserver" in window) {
+    const imageObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const img = entry.target
+          img.src = img.dataset.src
+          img.classList.remove("lazy")
+          imageObserver.unobserve(img)
+        }
+      })
+    })
+
+    document.querySelectorAll("img[data-src]").forEach((img) => {
+      imageObserver.observe(img)
+    })
+  }
+}
+
+// Smooth scroll mejorado
+function smoothScrollTo(target) {
+  const element = document.querySelector(target)
+  if (element) {
+    const headerHeight = document.querySelector(".header").offsetHeight
+    const elementPosition = element.offsetTop - headerHeight - 20
+
+    window.scrollTo({
+      top: elementPosition,
+      behavior: "smooth",
+    })
+  }
+}
+
+// Detectar scroll para efectos
+let ticking = false
+
+function updateScrollEffects() {
+  const scrolled = window.pageYOffset
+  const header = document.querySelector(".header")
+
+  if (header) {
+    if (scrolled > 100) {
+      header.style.background = "rgba(255, 255, 255, 0.98)"
+      header.style.boxShadow = "0 2px 20px rgba(45, 27, 20, 0.1)"
+    } else {
+      header.style.background = "rgba(255, 255, 255, 0.95)"
+      header.style.boxShadow = "none"
+    }
+  }
+
+  ticking = false
+}
+
+window.addEventListener("scroll", () => {
+  if (!ticking) {
+    requestAnimationFrame(updateScrollEffects)
+    ticking = true
+  }
 })

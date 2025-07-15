@@ -3,23 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración - Mi Blog Personal</title>
+    <title>Panel de Administración - Café & Pasión</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Lora:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☕</text></svg>">
 </head>
 <body>
     <header class="header">
         <nav class="nav">
             <div class="nav-container">
-                <h1 class="logo">
-                    <a href="index.html">Mi Blog</a>
-                </h1>
+                <div class="logo">
+                    <span class="logo-icon">☕</span>
+                    <h1><a href="index.html">Café & Pasión</a></h1>
+                </div>
                 <ul class="nav-menu">
                     <li><a href="index.html" class="nav-link">Inicio</a></li>
+                    <li><a href="index.html#cafe-mes" class="nav-link">Café del Mes</a></li>
+                    <li><a href="index.html#testimonios" class="nav-link">Testimonios</a></li>
                     <li><a href="admin.html" class="nav-link active">Admin</a></li>
                 </ul>
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Menú móvil">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
             </div>
         </nav>
     </header>
@@ -27,54 +36,128 @@
     <main class="main">
         <div class="container">
             <section class="admin-section">
-                <h2 class="section-title">Panel de Administración</h2>
+                <div class="admin-hero">
+                    <h2 class="section-title">Panel de Administración</h2>
+                    <p class="section-subtitle">Gestiona las historias de tu blog cafetero</p>
+                </div>
                 
                 <div class="admin-tabs">
-                    <button class="tab-btn active" onclick="showTab('posts-list')">Lista de Posts</button>
-                    <button class="tab-btn" onclick="showTab('add-post')">Añadir Post</button>
-                    <button class="tab-btn" onclick="showTab('json-editor')">Editor JSON</button>
+                    <button class="tab-btn active" onclick="showTab('posts-list')">
+                        <span class="tab-icon">📝</span>
+                        Historias
+                    </button>
+                    <button class="tab-btn" onclick="showTab('add-post')">
+                        <span class="tab-icon">➕</span>
+                        Nueva Historia
+                    </button>
+                    <button class="tab-btn" onclick="showTab('json-editor')">
+                        <span class="tab-icon">⚙️</span>
+                        Editor JSON
+                    </button>
                 </div>
 
                 <!-- Lista de Posts -->
                 <div id="posts-list" class="tab-content active">
                     <div class="admin-header">
-                        <h3>Gestionar Posts</h3>
-                        <button onclick="loadPostsAdmin()" class="btn btn-secondary">Recargar</button>
+                        <h3>Gestionar Historias del Café</h3>
+                        <button onclick="loadPostsAdmin()" class="btn btn-secondary">
+                            <span class="btn-icon">🔄</span>
+                            Recargar
+                        </button>
                     </div>
+                    
                     <div id="admin-loading" class="loading">
-                        <div class="spinner"></div>
-                        <p>Cargando posts...</p>
+                        <div class="coffee-loader">
+                            <div class="coffee-cup">
+                                <div class="coffee-liquid"></div>
+                            </div>
+                        </div>
+                        <p>Cargando historias...</p>
                     </div>
+                    
                     <div id="admin-error" class="error-message" style="display: none;">
+                        <div class="error-icon">☕</div>
                         <p id="admin-error-details"></p>
                         <button onclick="loadPostsAdmin()" class="retry-btn">Reintentar</button>
                     </div>
+                    
                     <div id="posts-admin-container" style="display: none;"></div>
                 </div>
 
                 <!-- Añadir/Editar Post -->
                 <div id="add-post" class="tab-content">
                     <div class="admin-header">
-                        <h3 id="form-title">Añadir Nuevo Post</h3>
-                        <button id="cancel-edit" onclick="cancelEdit()" class="btn btn-secondary" style="display: none;">Cancelar</button>
+                        <h3 id="form-title">Nueva Historia del Café</h3>
+                        <button id="cancel-edit" onclick="cancelEdit()" class="btn btn-secondary" style="display: none;">
+                            <span class="btn-icon">✖️</span>
+                            Cancelar
+                        </button>
                     </div>
+                    
                     <form id="post-form" class="post-form">
                         <input type="hidden" id="post-id" value="">
-                        <div class="form-group">
-                            <label for="post-title-input">Título *</label>
-                            <input type="text" id="post-title-input" required maxlength="200">
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="post-title-input">
+                                    <span class="label-icon">📝</span>
+                                    Título de la historia *
+                                </label>
+                                <input type="text" id="post-title-input" required maxlength="200" placeholder="Ej: El arte del café de filtro">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="post-date-input">
+                                    <span class="label-icon">📅</span>
+                                    Fecha de publicación *
+                                </label>
+                                <input type="date" id="post-date-input" required>
+                            </div>
                         </div>
+                        
                         <div class="form-group">
-                            <label for="post-date-input">Fecha *</label>
-                            <input type="date" id="post-date-input" required>
+                            <label for="post-image-input">
+                                <span class="label-icon">🖼️</span>
+                                Imagen destacada (URL)
+                            </label>
+                            <input type="url" id="post-image-input" placeholder="https://images.unsplash.com/photo-...">
+                            <small class="form-help">Recomendamos usar imágenes de Unsplash relacionadas con café</small>
                         </div>
+                        
                         <div class="form-group">
-                            <label for="post-content-input">Contenido *</label>
-                            <textarea id="post-content-input" required rows="15" placeholder="Escribe el contenido del post aquí..."></textarea>
+                            <label for="post-excerpt-input">
+                                <span class="label-icon">📄</span>
+                                Descripción breve
+                            </label>
+                            <textarea id="post-excerpt-input" rows="3" maxlength="300" placeholder="Una breve descripción que aparecerá en las tarjetas..."></textarea>
                         </div>
+                        
+                        <div class="form-group">
+                            <label for="post-content-input">
+                                <span class="label-icon">✍️</span>
+                                Contenido de la historia *
+                            </label>
+                            <textarea id="post-content-input" required rows="20" placeholder="Escribe aquí la historia completa sobre café...
+
+Puedes usar:
+- Párrafos separados por líneas vacías
+- **Texto en negrita**
+- *Texto en cursiva*
+- Listas con guiones (-)
+
+¡Comparte tu pasión por el café!"></textarea>
+                            <small class="form-help">Usa Markdown básico para formatear el texto</small>
+                        </div>
+                        
                         <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Guardar Post</button>
-                            <button type="reset" class="btn btn-secondary">Limpiar</button>
+                            <button type="submit" class="btn btn-primary">
+                                <span class="btn-icon">💾</span>
+                                Guardar Historia
+                            </button>
+                            <button type="reset" class="btn btn-secondary">
+                                <span class="btn-icon">🗑️</span>
+                                Limpiar
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -84,17 +167,40 @@
                     <div class="admin-header">
                         <h3>Editor JSON Completo</h3>
                         <div class="json-actions">
-                            <button onclick="loadJsonEditor()" class="btn btn-secondary">Recargar</button>
-                            <button onclick="validateJson()" class="btn btn-info">Validar</button>
-                            <button onclick="copyJson()" class="btn btn-info">Copiar</button>
+                            <button onclick="loadJsonEditor()" class="btn btn-secondary">
+                                <span class="btn-icon">🔄</span>
+                                Recargar
+                            </button>
+                            <button onclick="validateJson()" class="btn btn-info">
+                                <span class="btn-icon">✅</span>
+                                Validar
+                            </button>
+                            <button onclick="copyJson()" class="btn btn-info">
+                                <span class="btn-icon">📋</span>
+                                Copiar
+                            </button>
                         </div>
                     </div>
+                    
                     <div class="json-editor-container">
-                        <textarea id="json-textarea" class="json-textarea" rows="20" placeholder="Cargando JSON..."></textarea>
+                        <div class="json-editor-help">
+                            <h4>💡 Estructura del JSON</h4>
+                            <p>Cada historia debe tener: <code>id</code>, <code>title</code>, <code>date</code>, <code>image</code>, <code>excerpt</code>, <code>content</code></p>
+                        </div>
+                        
+                        <textarea id="json-textarea" class="json-textarea" rows="25" placeholder="Cargando JSON..."></textarea>
+                        
                         <div id="json-validation" class="validation-message"></div>
+                        
                         <div class="json-editor-actions">
-                            <button onclick="saveJson()" class="btn btn-primary">Guardar JSON</button>
-                            <button onclick="resetJson()" class="btn btn-secondary">Resetear</button>
+                            <button onclick="saveJson()" class="btn btn-primary">
+                                <span class="btn-icon">💾</span>
+                                Guardar JSON
+                            </button>
+                            <button onclick="resetJson()" class="btn btn-secondary">
+                                <span class="btn-icon">↩️</span>
+                                Resetear
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -104,7 +210,35 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024 Mi Blog Personal. Todos los derechos reservados.</p>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <span class="logo-icon">☕</span>
+                        <h3>Café & Pasión</h3>
+                    </div>
+                    <p>Explorando el fascinante mundo del café artesanal, una taza a la vez.</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Contacto</h4>
+                    <p>📧 hola@cafeypasion.com</p>
+                    <p>📱 +34 123 456 789</p>
+                    <p>📍 Madrid, España</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Síguenos</h4>
+                    <div class="social-links">
+                        <a href="#" aria-label="Instagram">📷</a>
+                        <a href="#" aria-label="Twitter">🐦</a>
+                        <a href="#" aria-label="YouTube">📺</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 Café & Pasión. Hecho con ❤️ y mucho café.</p>
+            </div>
         </div>
     </footer>
 
