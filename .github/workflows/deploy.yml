@@ -1,0 +1,131 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Validate JSON files
+      run: |
+        echo "Validating posts.json..."
+        if ! python3 -m json.tool data/posts.json > /dev/null; then
+          echo "❌ Error: posts.json is not valid JSON"
+          exit 1
+        fi
+        echo "✅ posts.json is valid"
+        
+    - name: Check HTML files
+      run: |
+        echo "Checking HTML files exist..."
+        for file in index.html post.html admin.html; do
+          if [ ! -f "$file" ]; then
+            echo "❌ Error: $file not found"
+            exit 1
+          fi
+          echo "✅ $file exists"
+        done
+        
+    - name: Check CSS and JS files
+      run: |
+        echo "Checking assets..."
+        if [ ! -f "assets/css/style.css" ]; then
+          echo "❌ Error: style.css not found"
+          exit 1
+        fi
+        if [ ! -f "assets/js/main.js" ]; then
+          echo "❌ Error: main.js not found"
+          exit 1
+        fi
+        echo "✅ All assets exist"
+        
+    - name: Validate posts structure
+      run: |
+        echo "Validating posts structure..."
+        python3 << 'EOF'
+        import json
+        import sys
+        from datetime import datetime
+        
+        try:
+            with open('data/posts.json', 'r', encoding='utf-8') as f:
+                posts = json.load(f)
+            
+            if not isinstance(posts, list):
+                print("❌ Error: posts.json must contain an array")
+                sys.exit(1)
+            
+            required_fields = ['id', 'title', 'date', 'content']
+            
+            for i, post in enumerate(posts):
+                for field in required_fields:
+                    if field not in post:
+                        print(f"❌ Error: Post {i+1} missing field '{field}'")
+                        sys.exit(1)
+                    
+                    if not isinstance(post[field], str) or not post[field].strip():
+                        print(f"❌ Error: Post {i+1} field '{field}' must be non-empty string")
+                        sys.exit(1)
+                
+                # Validate date format
+                try:
+                    datetime.strptime(post['date'], '%Y-%m-%d')
+                except ValueError:
+                    print(f"❌ Error: Post {i+1} has invalid date format. Use YYYY-MM-DD")
+                    sys.exit(1)
+            
+            print(f"✅ All {len(posts)} posts are valid")
+            
+        except json.JSONDecodeError as e:
+            print(f"❌ Error: Invalid JSON - {e}")
+            sys.exit(1)
+        except FileNotFoundError:
+            print("❌ Error: posts.json not found")
+            sys.exit(1)
+        except Exception as e:
+            print(f"❌ Error: {e}")
+            sys.exit(1)
+        EOF
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+      
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: '.'
+        
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

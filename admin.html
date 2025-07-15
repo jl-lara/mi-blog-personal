@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Mi Blog Personal</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-container">
+                <h1 class="logo">
+                    <a href="index.html">Mi Blog</a>
+                </h1>
+                <ul class="nav-menu">
+                    <li><a href="index.html" class="nav-link">Inicio</a></li>
+                    <li><a href="admin.html" class="nav-link active">Admin</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <section class="admin-section">
+                <h2 class="section-title">Panel de Administración</h2>
+                
+                <div class="admin-tabs">
+                    <button class="tab-btn active" onclick="showTab('posts-list')">Lista de Posts</button>
+                    <button class="tab-btn" onclick="showTab('add-post')">Añadir Post</button>
+                    <button class="tab-btn" onclick="showTab('json-editor')">Editor JSON</button>
+                </div>
+
+                <!-- Lista de Posts -->
+                <div id="posts-list" class="tab-content active">
+                    <div class="admin-header">
+                        <h3>Gestionar Posts</h3>
+                        <button onclick="loadPostsAdmin()" class="btn btn-secondary">Recargar</button>
+                    </div>
+                    <div id="admin-loading" class="loading">
+                        <div class="spinner"></div>
+                        <p>Cargando posts...</p>
+                    </div>
+                    <div id="admin-error" class="error-message" style="display: none;">
+                        <p id="admin-error-details"></p>
+                        <button onclick="loadPostsAdmin()" class="retry-btn">Reintentar</button>
+                    </div>
+                    <div id="posts-admin-container" style="display: none;"></div>
+                </div>
+
+                <!-- Añadir/Editar Post -->
+                <div id="add-post" class="tab-content">
+                    <div class="admin-header">
+                        <h3 id="form-title">Añadir Nuevo Post</h3>
+                        <button id="cancel-edit" onclick="cancelEdit()" class="btn btn-secondary" style="display: none;">Cancelar</button>
+                    </div>
+                    <form id="post-form" class="post-form">
+                        <input type="hidden" id="post-id" value="">
+                        <div class="form-group">
+                            <label for="post-title-input">Título *</label>
+                            <input type="text" id="post-title-input" required maxlength="200">
+                        </div>
+                        <div class="form-group">
+                            <label for="post-date-input">Fecha *</label>
+                            <input type="date" id="post-date-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="post-content-input">Contenido *</label>
+                            <textarea id="post-content-input" required rows="15" placeholder="Escribe el contenido del post aquí..."></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Guardar Post</button>
+                            <button type="reset" class="btn btn-secondary">Limpiar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Editor JSON -->
+                <div id="json-editor" class="tab-content">
+                    <div class="admin-header">
+                        <h3>Editor JSON Completo</h3>
+                        <div class="json-actions">
+                            <button onclick="loadJsonEditor()" class="btn btn-secondary">Recargar</button>
+                            <button onclick="validateJson()" class="btn btn-info">Validar</button>
+                            <button onclick="copyJson()" class="btn btn-info">Copiar</button>
+                        </div>
+                    </div>
+                    <div class="json-editor-container">
+                        <textarea id="json-textarea" class="json-textarea" rows="20" placeholder="Cargando JSON..."></textarea>
+                        <div id="json-validation" class="validation-message"></div>
+                        <div class="json-editor-actions">
+                            <button onclick="saveJson()" class="btn btn-primary">Guardar JSON</button>
+                            <button onclick="resetJson()" class="btn btn-secondary">Resetear</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Mi Blog Personal. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="assets/js/main.js"></script>
+</body>
+</html>
